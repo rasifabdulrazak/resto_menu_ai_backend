@@ -1,6 +1,6 @@
 from sqlalchemy.orm import DeclarativeBase, declared_attr
-from sqlalchemy import Column, DateTime, func
-
+from sqlalchemy import Column, DateTime, func  
+ 
 
 class Base(DeclarativeBase):
     __abstract__ = True
@@ -16,3 +16,4 @@ class Base(DeclarativeBase):
             server_default=func.now(),
             onupdate=func.now(),
         )
+ 

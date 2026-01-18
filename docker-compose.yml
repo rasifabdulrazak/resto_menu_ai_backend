@@ -1,0 +1,48 @@
+version: "3.9"
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: resto_menu_api
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - ./app:/app/app           #live code reload
+      - ./alembic:/app/alembic   #live migration edits
+      - ./alembic.ini:/app/alembic.ini
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    command: >
+      sh -c "
+      alembic upgrade head &&
+      uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app/app
+      "
+    networks:
+      - backend
+
+  db:
+    image: postgres:16-alpine
+    container_name: resto_menu_db
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+  postgres_data:
