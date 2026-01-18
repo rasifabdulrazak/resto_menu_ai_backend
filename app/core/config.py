@@ -15,11 +15,14 @@ class Settings(BaseSettings):
     PORT: int = 8000
 
     # CORS
-    CORS_ORIGINS: List[str] = [
+    CORS_ALLOW_ORIGINS: List[str] = [
         "http://localhost",
         "http://localhost:3000",
         "http://127.0.0.1:3000",
     ]
+    
+    CORS_ALLOW_METHODS: List[str] = ["*"]
+    CORS_ALLOW_HEADERS: List[str] = ["*"]
 
     # Database (PostgreSQL)
     POSTGRES_HOST: str = "localhost"
