@@ -10,6 +10,15 @@ from app.db.session import engine
 from app.core.debug.db_profiler import setup_db_profiling
 from app.middleware.debug_toolbar import DebugToolbarMiddleware
 from fastapi.openapi.utils import get_openapi
+from app.middleware.timezone import TimezoneMiddleware
+from app.i18n.translator import translate
+from app.middleware.locale import LocaleMiddleware
+from fastapi import Depends
+from app.dependencies.header import TimezoneHeader, LanguageHeader
+from app.api.v1.rbac.role import router as role_router
+
+
+
 
 
 def create_app() -> FastAPI:
@@ -22,7 +31,7 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
         swagger_ui_parameters={
         "persistAuthorization": True,  # THIS IS THE KEY
-    },
+        },
     )
 
     # DB profiling (DEV only)
@@ -34,16 +43,6 @@ def create_app() -> FastAPI:
 
     # Exception handlers
     setup_exception_handlers(app)
-
-    # Health check
-    @app.get("/health", tags=["Health"])
-    async def health_check():
-        return {
-            "status": "success",
-            "app": settings.APP_NAME,
-            "version": settings.APP_VERSION,
-            "environment": settings.ENVIRONMENT,
-        }
 
     return app
 
@@ -63,21 +62,64 @@ def custom_openapi():
         routes=app.routes,
     )
 
-    if "components" not in openapi_schema:
-        openapi_schema["components"] = {}
+    # Ensure components
+    openapi_schema.setdefault("components", {})
+    openapi_schema["components"].setdefault("securitySchemes", {})
 
-    if "securitySchemes" not in openapi_schema["components"]:
-        openapi_schema["components"]["securitySchemes"] = {}
-
+    # -------------------------
+    # Bearer Auth
+    # -------------------------
     openapi_schema["components"]["securitySchemes"]["BearerAuth"] = {
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "JWT",
     }
 
-    openapi_schema["security"] = [{"BearerAuth": []}]
+    # -------------------------
+    # Timezone (API Key Header)
+    # -------------------------
+    openapi_schema["components"]["securitySchemes"]["TimezoneHeader"] = {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Timezone",
+        "description": "Client timezone (IANA format, e.g. Asia/Kolkata)",
+    }
+
+    # -------------------------
+    # Locale (API Key Header)
+    # -------------------------
+    openapi_schema["components"]["securitySchemes"]["LocaleHeader"] = {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Accept-Language",
+        "description": "Response language (e.g. en, en-IN, ar)",
+    }
+
+    # -------------------------
+    # Apply globally (THIS IS KEY)
+    # -------------------------
+    openapi_schema["security"] = [
+        {"BearerAuth": []},
+        {"TimezoneHeader": []},
+        {"LocaleHeader": []},
+    ]
 
     app.openapi_schema = openapi_schema
     return app.openapi_schema
 
 app.openapi = custom_openapi
+app.add_middleware(TimezoneMiddleware)
+app.add_middleware(LocaleMiddleware)
+
+
+@app.get("/health", tags=["Health"])
+async def health_check():
+        return {
+            "status": "success",
+            "message":translate("health.success"),
+            "app": settings.APP_NAME,
+            "version": settings.APP_VERSION,
+            "environment": settings.ENVIRONMENT,
+        }
+        
+app.include_router(role_router)

@@ -1,0 +1,5 @@
+{
+  "health.success": "الخدمة تعمل",
+  "auth.invalid_credentials": "البريد الإلكتروني أو كلمة المرور غير صحيحة",
+  "user.created": "تم إنشاء المستخدم بنجاح"
+}
