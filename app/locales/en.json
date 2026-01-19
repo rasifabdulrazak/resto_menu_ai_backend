@@ -1,0 +1,5 @@
+{
+  "health.success": "Service is running",
+  "auth.invalid_credentials": "Invalid email or password",
+  "user.created": "User created successfully"
+}
