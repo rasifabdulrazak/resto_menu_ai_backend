@@ -59,4 +59,4 @@ class RoleService:
         roles = (await db.execute(stmt)).scalars().all()
         total = (await db.execute(count_stmt)).scalar_one()
 
-        return roles, total
+        return roles, total 
