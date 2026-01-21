@@ -17,7 +17,7 @@ class RoleService:
 
     @staticmethod
     async def get(db: AsyncSession, role_id: int) -> Role:
-        role = await db.get(Role, role_id) 
+        role = await db.get(Role, role_id)  
         print(role,"============")
         if not role:
             raise HTTPException(
