@@ -37,7 +37,7 @@ class RoleService:
             setattr(role, key, value)
 
         await db.commit()
-        await db.refresh(role)
+        await db.refresh(role) 
         return role
 
     @staticmethod
