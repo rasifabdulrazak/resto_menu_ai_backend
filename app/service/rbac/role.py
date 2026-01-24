@@ -27,7 +27,7 @@ class RoleService:
         if not role:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail={
+                detail={ 
                     "code": "ROLE_NOT_FOUND",
                     "details": f"Role with id={role_id} not found",
                 },
