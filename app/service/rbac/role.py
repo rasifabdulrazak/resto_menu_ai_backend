@@ -1,24 +1,29 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
+from fastapi import HTTPException, status
+
 from app.model.rbac.role import Role
 from app.schema.rbac.role import RoleCreate, RoleUpdate
-from fastapi import HTTPException, status
 
 
 class RoleService:
+    def __init__(self, db: AsyncSession):
+        self.db = db
 
-    @staticmethod
-    async def create(db: AsyncSession, payload: RoleCreate) -> Role:
+    async def create(self, payload: RoleCreate) -> Role:
         role = Role(**payload.model_dump())
-        db.add(role)
-        await db.commit()
-        await db.refresh(role)
-        return role
+        self.db.add(role)
 
-    @staticmethod
-    async def get(db: AsyncSession, role_id: int) -> Role:
-        role = await db.get(Role, role_id)  
-        print(role,"============")
+        try:
+            await self.db.commit()
+            await self.db.refresh(role)
+            return role
+        except Exception:
+            await self.db.rollback()
+            raise
+
+    async def get(self, role_id: int) -> Role:
+        role = await self.db.get(Role, role_id)
         if not role:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -29,34 +34,45 @@ class RoleService:
             )
         return role
 
-    @staticmethod
-    async def update(db: AsyncSession, role_id: int, payload: RoleUpdate) -> Role:
-        role = await RoleService.get(db, role_id)
+    async def update(self, role_id: int, payload: RoleUpdate) -> Role:
+        role = await self.get(role_id)
 
         for key, value in payload.model_dump(exclude_unset=True).items():
             setattr(role, key, value)
 
-        await db.commit()
-        await db.refresh(role) 
-        return role
+        try:
+            await self.db.commit()
+            await self.db.refresh(role)
+            return role
+        except Exception:
+            await self.db.rollback()
+            raise
 
-    @staticmethod
-    async def delete(db: AsyncSession, role_id: int) -> None:
-        role = await RoleService.get(db, role_id)
-        await db.delete(role)
-        await db.commit()
+    async def delete(self, role_id: int) -> None:
+        role = await self.get(role_id)
 
-    @staticmethod
+        try:
+            await self.db.delete(role)
+            await self.db.commit()
+        except Exception:
+            await self.db.rollback()
+            raise
+
     async def list(
-        db: AsyncSession,
+        self,
         page: int,
         page_size: int,
     ) -> tuple[list[Role], int]:
 
-        stmt = select(Role).offset((page - 1) * page_size).limit(page_size)
+        stmt = (
+            select(Role)
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        )
+
         count_stmt = select(func.count(Role.id))
 
-        roles = (await db.execute(stmt)).scalars().all()
-        total = (await db.execute(count_stmt)).scalar_one()
+        roles = (await self.db.execute(stmt)).scalars().all()
+        total = (await self.db.execute(count_stmt)).scalar_one()
 
-        return roles, total 
+        return roles, total
