@@ -20,7 +20,7 @@ class RoleService:
             return role
         except Exception:
             await self.db.rollback()
-            raise
+            raise 
 
     async def get(self, role_id: int) -> Role:
         role = await self.db.get(Role, role_id)
