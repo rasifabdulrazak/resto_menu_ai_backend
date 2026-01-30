@@ -1,7 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from fastapi import HTTPException, status
-
 from app.model.rbac.role import Role
 from app.schema.rbac.role import RoleCreate, RoleUpdate
 
@@ -15,12 +14,12 @@ class RoleService:
         self.db.add(role)
 
         try:
-            await self.db.commit()
+            await self.db.commit()  
             await self.db.refresh(role)
             return role
         except Exception:
             await self.db.rollback()
-            raise 
+            raise   
 
     async def get(self, role_id: int) -> Role:
         role = await self.db.get(Role, role_id)
