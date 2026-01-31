@@ -7,7 +7,7 @@ from app.schema.rbac.role import RoleCreate, RoleUpdate
 
 class RoleService:
     def __init__(self, db: AsyncSession):
-        self.db = db
+        self.db = db 
 
     async def create(self, payload: RoleCreate) -> Role:
         role = Role(**payload.model_dump())
